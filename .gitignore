@@ -1,0 +1,33 @@
+# Environment
+.env
+
+# Data directories
+data/raw/
+data/processed/
+
+# Database
+*.db
+
+# Model artifacts
+*.joblib
+
+# GEE service account key (only the key file, not the whole config/ folder)
+config/gee-key.json
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
