@@ -2,7 +2,7 @@
 
 **Ward-level, 72-hour, explainable air quality forecasting for Delhi — built on real government + satellite + weather data, at ₹0 cost, in 5 days, solo.**
 
-![Status](https://img.shields.io/badge/status-in--development-yellow)
+![Status](https://img.shields.io/badge/status-phase--1--complete-blue)
 ![Hackathon](https://img.shields.io/badge/ET%20AI%20Hackathon-2026-blue)
 ![Problem Statement](https://img.shields.io/badge/Problem%20Statement-PS5-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -389,7 +389,7 @@ WAQI (aqicn.org) · CPCB & data.gov.in · OpenWeatherMap · Google Earth Engine 
 
 ## 🚦 Project Status
 
-🚧 **In active development** — pre-submission, solo 5-day build in progress. Update this badge and the milestone checklist below as days pass.
+🟦 **Phase 1 Complete** — Core data pipeline and forecasting models built and validated. Phase 2 (ward interpolation + FastAPI + LLM agents) in progress.
 
 ---
 
@@ -411,13 +411,13 @@ WAQI (aqicn.org) · CPCB & data.gov.in · OpenWeatherMap · Google Earth Engine 
 
 ## ✅ Hackathon Deliverables Checklist
 
-- [ ] GitHub repository (public, clean commit history)
-- [ ] Live, publicly accessible demo URL
+- [x] GitHub repository (public, clean commit history) — Phase 1 code committed
+- [ ] Live, publicly accessible demo URL (Phase 3)
 - [ ] Architecture diagram
 - [ ] Presentation deck
 - [ ] Demo video
 - [x] README (this document)
-- [ ] Source code, fully wired end-to-end
+- [ ] Source code, fully wired end-to-end (Phase 2–3 pending)
 
 ---
 ---
@@ -432,26 +432,33 @@ WAQI (aqicn.org) · CPCB & data.gov.in · OpenWeatherMap · Google Earth Engine 
 
 **Expected Output:** A callable `forecast(location, horizon) → AQI` function backed by trained LightGBM models, with documented RMSE against both baselines.
 
-**Main Modules:** Ingestion clients (WAQI, CPCB, OpenWeatherMap, GEE Sentinel-5P, NASA FIRMS, OSM) · Feature store (SQLite) · Feature engineering pipeline · Baseline models · LightGBM training (3 horizons).
+**Main Modules:** Ingestion clients (WAQI, CPCB, OpenWeatherMap, OpenAQ, GEE Sentinel-5P, NASA FIRMS) · Feature store (SQLite) · Feature engineering pipeline · Baseline models · LightGBM training (3 horizons).
 
 **Checklist:**
-- [ ] All API keys registered (hour 1: WAQI, data.gov.in, OpenWeatherMap, NASA FIRMS)
-- [ ] GEE Cloud project registered and eligibility approved
-- [ ] 60–90 days historical AQI pulled for 5–8 Delhi stations
-- [ ] Weather + satellite data pulled for the same window
-- [ ] Station-location + timestamp join validated clean
-- [ ] Persistence baseline computed
-- [ ] Seasonal-naive baseline computed
-- [ ] 3 LightGBM models trained (24h / 48h / 72h)
-- [ ] RMSE vs. both baselines documented, beating persistence at ≥24h
+- [x] All API keys registered (WAQI, data.gov.in, OpenWeatherMap, NASA FIRMS, OpenAQ, Groq)
+- [x] GEE Cloud project registered and eligibility approved
+- [x] 60–91 days historical AQI pulled for 3 Delhi stations via OpenAQ (real CPCB ground sensors; 121K+ measurements)
+- [x] Weather data pulled for the same window (Open-Meteo, 91 days, 8 stations)
+- [x] Station-location + timestamp join validated clean (0 duplicates, IST, missing-data policy applied)
+- [x] Persistence baseline computed
+- [x] Seasonal-naive baseline computed
+- [x] 3 LightGBM models trained (24h / 48h / 72h) on real CPCB sensor data
+- [x] RMSE vs. both baselines documented, beating persistence at all horizons (24h: 33.47 vs 42.82)
 
-**Completion Criteria:** The forecast function runs end-to-end and returns a validated numeric AQI prediction per horizon per station, with an honest baseline-comparison table produced.
+**OpenAQ RMSE — Real CPCB Ground-Station Data:**
+| Horizon | Model RMSE | Persistence | Seasonal |
+|---------|-----------|-------------|----------|
+| 24h | 33.47 | 42.82 | 46.63 |
+| 48h | 35.53 | 50.65 | 43.11 |
+| 72h | 35.88 | 47.65 | 36.34 |
 
-**Dependencies:** None — this is the foundation phase. GEE registration is the single highest external-process risk; start it hour one.
+**Completion Criteria:** ✅ The forecast function runs end-to-end and returns a validated numeric AQI prediction per horizon per station, with an honest baseline-comparison table produced.
 
-**Deliverables:** Joined feature table (SQLite), 3 trained model artifacts, baseline comparison report.
+**Dependencies:** None — this is the foundation phase. GEE registration is the single highest external-process risk; start it hour one. *(Satellite skipped per Day 1 rule — GEE IAM permission pending; stretch-add for Day 4.)*
 
-**Risks:** GEE registration delay · satellite-station join failure (mitigation: proceed without satellite, add as a later stretch-goal) · model failing to beat baseline at longer horizons (mitigation: rebalance demo emphasis toward 24h, frame 72h as directional).
+**Deliverables:** Joined feature table (SQLite), 3 trained model artifacts (`forecast_{24h,48h,72h}_openaq.pkl`), baseline comparison report (`baseline_report_openaq.json`).
+
+**Risks:** ~~GEE registration delay~~ (approved, IAM pending) · ~~satellite-station join failure~~ (skipped, Day 4 stretch) · ~~model failing to beat baseline~~ (beats at all horizons).
 
 **Approximate Timeline:** Day 1 – Day 2 of 5.
 
@@ -541,15 +548,15 @@ flowchart LR
 ## 🗺️ Milestone Checklist
 
 - [x] Strategy & problem statement selection (PS5)
-- [ ] API keys & GEE registration
-- [ ] Data ingestion pipeline
-- [ ] Feature store & baselines
-- [ ] Forecasting model training
-- [ ] Ward-level interpolation
-- [ ] Backend API development
-- [ ] Advisory & Q&A agent
-- [ ] Frontend dashboard
-- [ ] Integration & deployment
+- [x] API keys & GEE registration
+- [x] Data ingestion pipeline
+- [x] Feature store & baselines
+- [x] Forecasting model training (3 LightGBM models on real CPCB data via OpenAQ)
+- [ ] Ward-level interpolation (Phase 2)
+- [ ] Backend API development (Phase 2)
+- [ ] Advisory & Q&A agent (Phase 2)
+- [ ] Frontend dashboard (Phase 3)
+- [ ] Integration & deployment (Phase 3)
 - [ ] Testing
 - [ ] Architecture diagram
 - [ ] Presentation deck
