@@ -1,17 +1,40 @@
+---
+title: VayuDrishti — Hyperlocal AQI Intelligence
+emoji: 🌫️
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_port: 7860
+pinned: false
+license: mit
+tags:
+  - aqi
+  - air-quality
+  - delhi
+  - lightgbm
+  - fastapi
+  - leaflet
+  - groq
+  - spatial-interpolation
+  - idw
+  - openaq
+  - cpcb
+---
+
 # 🌫️ VayuDrishti — Hyperlocal AQI Intelligence
 
 **Constituency-level, 72-hour, explainable air quality forecasting for Delhi — built on real government + satellite + weather data, at ₹0 cost, in 5 days, solo.**
 
-![Status](https://img.shields.io/badge/status-phase--2--complete-green)
+![Status](https://img.shields.io/badge/status-phase--3--live-brightgreen)
 ![Hackathon](https://img.shields.io/badge/ET%20AI%20Hackathon-2026-blue)
 ![Problem Statement](https://img.shields.io/badge/Problem%20Statement-PS5-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Python](https://img.shields.io/badge/python-3.11-blue)
-![Build](https://img.shields.io/badge/build-solo%20%2F%205--day-lightgrey)
+![Docker](https://img.shields.io/badge/deploy-HF%20Spaces-ff9d00)
 
 **Economic Times AI Hackathon 2026 · Problem Statement 5 — Urban Air Quality Intelligence**
 
-[Live Demo](#) · [Demo Video](#) · [Presentation Deck](#) · [Architecture Diagram](#system-architecture-overview)
+[Live Demo](https://ogrohit-vayudrishti.hf.space) · [Architecture Diagram](#system-architecture-overview)
 
 ---
 
@@ -398,7 +421,7 @@ WAQI (aqicn.org) · CPCB & data.gov.in · OpenWeatherMap · Google Earth Engine 
 
 ## 🚦 Project Status
 
-🟩 **Phase 2 Complete** — IDW interpolation + confidence-tier overlay built. FastAPI backend (4 endpoints) + Advisory & Q&A Agent (Groq, grounded in real features, EN+Hindi) verified end-to-end (55/55 Phase 2 Gate checks pass).
+🟩 **Phase 3 Complete** — Leaflet frontend with CPCB color scale + confidence-tier border encoding, time slider, advisory panel, and Q&A box deployed on HuggingFace Spaces. End-to-end smoke test verified. Architecture diagram reflects the actual 3-station/70-AC/IDW+confidence build.
 
 ---
 
@@ -420,13 +443,13 @@ WAQI (aqicn.org) · CPCB & data.gov.in · OpenWeatherMap · Google Earth Engine 
 
 ## ✅ Hackathon Deliverables Checklist
 
-- [x] GitHub repository (public, clean commit history) — Phase 1 code committed
-- [ ] Live, publicly accessible demo URL (Phase 3)
-- [ ] Architecture diagram
+- [x] GitHub repository (public, clean commit history)
+- [x] Live, publicly accessible demo URL (HF Spaces)
+- [x] Architecture diagram (in README + docs/)
 - [ ] Presentation deck
 - [ ] Demo video
 - [x] README (this document)
-- [ ] Source code, fully wired end-to-end (Phase 2–3 pending)
+- [x] Source code, fully wired end-to-end
 
 ---
 ---
@@ -509,14 +532,14 @@ WAQI (aqicn.org) · CPCB & data.gov.in · OpenWeatherMap · Google Earth Engine 
 **Main Modules:** Leaflet.js frontend (CPCB color scale, time slider, constituency drill-in, advisory panel, Q&A box) · frontend–backend wiring · HuggingFace Spaces deployment (Docker SDK) · demo script rehearsal · deliverable assembly.
 
 **Checklist:**
-- [ ] Leaflet map built with the official CPCB AQI color scale
-- [ ] Time slider (today / 24h / 48h / 72h) wired
-- [ ] Constituency click → advisory panel populated
-- [ ] Q&A input box wired to backend
-- [ ] Frontend deployed and connected to backend on HuggingFace Spaces
-- [ ] No raw JSON visible anywhere in the demo path
-- [ ] Data pipeline fully cached; Groq live calls protected by pre-generated fallback
-- [ ] Architecture diagram produced
+- [x] Leaflet map built with the official CPCB AQI color scale
+- [x] Time slider (today / 24h / 48h / 72h) wired
+- [x] Constituency click → advisory panel populated
+- [x] Q&A input box wired to backend
+- [x] Frontend deployed and connected to backend on HuggingFace Spaces
+- [x] No raw JSON visible anywhere in the demo path
+- [x] Data pipeline fully cached; Groq live calls protected by pre-generated fallback
+- [x] Architecture diagram produced
 - [ ] Presentation deck produced (skeleton started Day 3, not Day 5)
 - [ ] Demo video recorded
 - [ ] 5-minute demo script rehearsed end-to-end at least 3 times
