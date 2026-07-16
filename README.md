@@ -13,8 +13,6 @@
 
 [Live Demo](#) · [Demo Video](#) · [Presentation Deck](#) · [Architecture Diagram](#system-architecture-overview)
 
-> *Naming note: "VayuDrishti" is a suggested placeholder name — rename freely (find-and-replace across this file) if you'd rather use something else.*
-
 ---
 
 ## 📑 Table of Contents
