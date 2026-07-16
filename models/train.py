@@ -260,7 +260,9 @@ def forecast(canonical_name: str, horizon: int, suffix: str = "openaq") -> dict 
         model_path = MOD_DIR / f"forecast_{horizon}h.pkl"
     if not feat_path.exists():
         feat_path = MOD_DIR / f"feature_cols_{horizon}h.json"
-    features_path = "data/processed/features.csv"
+    features_path = f"data/processed/features_{suffix}.csv"
+    if not Path(features_path).exists():
+        features_path = "data/processed/features.csv"
 
     if not model_path.exists() or not feat_path.exists():
         print(f"Model for {horizon}h not found at {model_path}")

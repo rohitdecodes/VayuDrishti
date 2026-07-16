@@ -1,0 +1,35 @@
+# VayuDrishti — Interpolation & Confidence Configuration
+# Phase 2, T1: Explicitly-defined thresholds — no magic numbers in code.
+#
+# These thresholds define the confidence tier for any boundary unit.
+# "distance_km" = distance from the unit centroid to the nearest
+# of the 3 active monitoring stations.
+
+stations:
+  - name: "RK Puram"
+    lat: 28.565
+    lon: 77.175
+  - name: "Anand Vihar"
+    lat: 28.650
+    lon: 77.319
+  - name: "Punjabi Bagh"
+    lat: 28.663
+    lon: 77.138
+
+confidence_tiers:
+  high:
+    label: "High"
+    max_distance_km: 5
+    description: "Within 5 km of a monitoring station — forecast is locally reliable."
+  medium:
+    label: "Medium"
+    max_distance_km: 15
+    description: "5–15 km from the nearest station — forecast is directional, use with some caution."
+  low:
+    label: "Low"
+    max_distance_km: 999
+    description: "More than 15 km from all stations — estimate is a rough interpolation; treat as indicative only."
+
+idw:
+  power: 2
+  epsilon_km: 0.001
