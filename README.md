@@ -298,8 +298,7 @@ The architecture is designed to scale: swapping to a new city is a matter of pro
 
 ## 👤 Contributors
 
-**Rohit Patil** — Solo Builder · B.Tech IT, Walchand College of Engineering, Sangli · [GitHub: rohitdecodes](https://github.com/rohitdecodes)
-
+**Rohit Patil** — Solo Builder 
 ---
 
 ## 📄 License
@@ -313,5 +312,3 @@ MIT License — permissive, standard for open-source submissions.
 OpenAQ · Open-Meteo · OpenStreetMap/CartoDB · Groq · HuggingFace Spaces · Economic Times AI Hackathon 2026 organizers.
 
 ---
-
-*Detailed build history and verification logs are available in [PHASE_1.md](PHASE_1.md), [PHASE_2.md](PHASE_2.md), and [PHASE_3.md](PHASE_3.md). The demo rehearsal script was moved to [DEMO_SCRIPT.md](DEMO_SCRIPT.md).*
