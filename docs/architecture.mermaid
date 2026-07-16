@@ -1,0 +1,73 @@
+flowchart TD
+    subgraph ING["DATA INGESTION — cached, never live during demo"]
+        A1["OpenAQ — 3 CPCB stations
+        (RK Puram · Anand Vihar · Punjabi Bagh)
+        121K+ measurements, 91 days"]
+        A2["Open-Meteo Weather
+        Temperature · Humidity · Pressure
+        Wind speed/direction"]
+    end
+
+    A1 --> FS
+    A2 --> FS
+
+    FS[("FEATURE STORE — SQLite
+    81 features per row:
+    lags (t-1h to t-72h),
+    rolling averages (6h/24h/72h),
+    calendar features (hour/dow/month/stubble season),
+    weather (temperature/humidity/pressure/wind)
+    **NO satellite features**")]
+
+    FS --> MODEL["FORECASTING MODEL — LightGBM
+    × 3 independent models (24h / 48h / 72h)
+    RMSE: 33.5 / 35.5 / 35.9
+    Beats persistence at all horizons
+    Benchmarked vs persistence + seasonal-naive baselines"]
+
+    MODEL --> IDW["IDW SPATIAL INTERPOLATION
+    3 station points -> 70 AC centroids
+    Distance-based confidence tiering:
+    HIGH (<5km): 19 ACs
+    MEDIUM (5-15km): 46 ACs
+    LOW (>15km): 5 ACs
+    Low ACs get explicit honesty caveat in all output"]
+
+    IDW --> AGENT["ADVISORY & Q&A AGENT
+    Groq · Llama 3.1 8B Instant (0.3-0.9s)
+    EN + Hindi bilingual
+    Grounded in real feature importances ONLY
+    Explicitly constrained: never reference satellite/fire
+    Low-confidence: mandatory honesty caveat
+    Fallback: pre-generated cached responses for demo safety"]
+
+    IDW --> API["FASTAPI BACKEND — 4 endpoints
+    GET /forecast/{horizon} -> GeoJSON
+    GET /forecast/{unit_id}/{horizon}
+    POST /advisory/{unit_id}/{horizon} -> EN+Hindi
+    POST /qa/{unit_id} -> grounded answer
+    StaticFiles: serves frontend
+    Port: 7860 (HF Spaces standard)"]
+
+    AGENT --> FE
+    API --> FE
+
+    FE["LEAFLET FRONTEND — HTML5 + JS
+    Dark CartoDB basemap
+    CPCB official color scale
+    Confidence-tier border encoding:
+    · High: solid green border
+    · Medium: dashed amber border
+    · Low: thick red border + crosshatch overlay
+    Time slider: Today / +24h / +48h / +72h
+    Unit click -> advisory panel (EN+Hindi)
+    Q&A box with example chips
+    AQI range legend
+    Fallback: pre-cached responses for Groq failures"]
+
+    FE --> DEPLOY["HUGGINGFACE SPACES
+    Docker · Single container
+    Python 3.11-slim
+    Backend + Static Frontend
+    Secrets: GROQ_API_KEY (never committed)
+    URL: rohitdecodes-vayudrishti.hf.space"]

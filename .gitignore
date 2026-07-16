@@ -28,6 +28,14 @@ venv/
 # Jupyter
 .ipynb_checkpoints/
 
+# Phase planning docs (not for deployment)
+PHASE_*.md
+PHASE*_SUMMARY.md
+_summary.md
+
+# Kilo config
+.kilo/
+
 # OS
 .DS_Store
 Thumbs.db

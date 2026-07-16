@@ -1,0 +1,28 @@
+{
+  "advisory": {
+    "R_K_PURAM": {
+      "unit_name": "R K PURAM",
+      "advisory_en": "The air quality in RK Puram is expected to be satisfactory, with an AQI of 53.2. This is driven by the recent drop in humidity over the past 24 hours, which has helped to reduce pollution levels. Additionally, stable pressure and a slight decrease in temperature over the past 72 hours have also contributed to this favorable forecast.",
+      "advisory_hi": "राजकुमारी पुरम में वायु गुणवत्ता संतोषजनक रहने की संभावना है, जिसका AQI 53.2 है। यह 24 घंटे के बाद नमी में गिरावट के कारण हुआ है, जिससे प्रदूषण स्तर कम हुआ है। स्थिर दबाव और 72 घंटे के बाद तापमान में थोड़ी गिरावट के कारण भी इस अनुकूल भविष्यवाणी में योगदान हुआ है।"
+    },
+    "BAWANA": {
+      "unit_name": "BAWANA",
+      "advisory_en": "This estimate is far from our monitoring stations — treat it as directional only. We expect a Satisfactory air quality in Bawana, with AQI forecasted at 55.0. The recent drop in humidity and stable atmospheric pressure, along with a slight decrease in temperature over the last 72 hours, are contributing factors.",
+      "advisory_hi": "ये अनुमान हमारे निगरानी स्टेशनों से दूर है — इसे दिशात्मक मानें केवल। बवाना में हम एक संतोषजनक वायु गुणवत्ता की उम्मीद करते हैं, जिसका AQI 55.0 है। हाल के नमी में गिरावट और स्थिर वायुमंडलीय दबाव, साथ ही पिछले 72 घंटों में थोड़ी तापमान में गिरावट, मुख्य कारक हैं।"
+    }
+  },
+  "qa": {
+    "default": {
+      "unit_name": "Delhi",
+      "answer": "Based on the model's feature importances, AQI levels in Delhi are influenced by recent PM2.5 trends, humidity, temperature, and wind patterns. Our model uses only ground-station sensor data and weather measurements — satellite and fire data are not part of this model."
+    },
+    "Why is this AQI changing?": {
+      "unit_name": "R K PURAM",
+      "answer": "Based on the top features driving the forecast, it appears that the AQI in R K Puram is changing due to a combination of low humidity over the past 24 hours, relatively stable atmospheric pressure, and a gradual decrease in temperature over the past 72 hours. These factors may be contributing to the current satisfactory air quality."
+    },
+    "How reliable is this estimate?": {
+      "unit_name": "R K PURAM",
+      "answer": "The AQI forecast for R K PURAM has a High confidence level, which indicates that the model is quite reliable in its prediction. The High confidence tier suggests that the model is within 5 km of the actual AQI value."
+    }
+  }
+}

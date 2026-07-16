@@ -1,6 +1,6 @@
 # 🌫️ VayuDrishti — Hyperlocal AQI Intelligence
 
-**Ward-level, 72-hour, explainable air quality forecasting for Delhi — built on real government + satellite + weather data, at ₹0 cost, in 5 days, solo.**
+**Constituency-level, 72-hour, explainable air quality forecasting for Delhi — built on real government + satellite + weather data, at ₹0 cost, in 5 days, solo.**
 
 ![Status](https://img.shields.io/badge/status-phase--2--complete-green)
 ![Hackathon](https://img.shields.io/badge/ET%20AI%20Hackathon-2026-blue)
@@ -49,7 +49,7 @@
 
 ## 🖼️ Banner
 
-`docs/banner.png` — *(placeholder — add a wide banner image showing the Leaflet ward map before submission)*
+`docs/banner.png` — *(placeholder — add a wide banner image showing the Leaflet constituency map before submission)*
 
 ---
 
@@ -65,7 +65,7 @@ Every data source in the trained model is real, live, and free. Satellite and fi
 
 **PS5 — Urban Air Quality Intelligence** asks for an AI-driven system that turns India's existing air-quality monitoring infrastructure (900+ CAAQMS stations, satellite feeds, weather data) into actionable intelligence, spanning suggested components such as national-scale monitoring dashboards, enforcement-linked source attribution, multi-city comparison views, citizen-facing delivery (WhatsApp/IVR), and atmospheric dispersion modelling.
 
-**Our scoped build** deliberately does *not* attempt all five of those components in 5 solo days. Instead, we build the one hard, load-bearing piece those components would all depend on — an honest, benchmarked, ward-level forecast — and do it right. See [Known Limitations](#-known-limitations) for exactly what's out of scope and why.
+**Our scoped build** deliberately does *not* attempt all five of those components in 5 solo days. Instead, we build the one hard, load-bearing piece those components would all depend on — an honest, benchmarked, constituency-level forecast — and do it right. See [Known Limitations](#-known-limitations) for exactly what's out of scope and why.
 
 ---
 
@@ -79,12 +79,12 @@ Every data source in the trained model is real, live, and free. Satellite and fi
 
 ## 🚀 Our Solution
 
-A **Hyperlocal Predictive AQI Forecasting Agent** for Delhi (highest CAAQMS station density in India), producing 24h/48h/72h ward-level AQI forecasts from fused ground-station, satellite, and meteorological data — presented on an interactive map, with a thin LLM layer that:
+A **Hyperlocal Predictive AQI Forecasting Agent** for Delhi (highest CAAQMS station density in India), producing 24h/48h/72h constituency-level AQI forecasts from fused ground-station, satellite, and meteorological data — presented on an interactive map, with a thin LLM layer that:
 
 1. Translates the numeric forecast into a plain-language, localized (English + Hindi) health advisory.
-2. Answers follow-up questions about *why* a specific ward's forecast is moving — grounded in the model's own real feature importances, never a hallucinated explanation.
+2. Answers follow-up questions about *why* a specific constituency's forecast is moving — grounded in the model's own real feature importances, never a hallucinated explanation.
 
-**Demo boundary, stated plainly:** shows what AQI will be at ward level over the next 3 days in one city, and explains why in plain language. No enforcement recommendations, no multi-city view, no live citizen delivery channel — see [Future Scope](#-future-scope) for what those look like post-hackathon.
+**Demo boundary, stated plainly:** shows what AQI will be at constituency level over the next 3 days in one city, and explains why in plain language. No enforcement recommendations, no multi-city view, no live citizen delivery channel — see [Future Scope](#-future-scope) for what those look like post-hackathon.
 
 ---
 
@@ -96,7 +96,7 @@ A **Hyperlocal Predictive AQI Forecasting Agent** for Delhi (highest CAAQMS stat
 - 🗣️ **Bilingual (EN/HI) plain-language advisory** — grounded in the forecast, not generic text. Low-confidence advisories state plainly: "This estimate is far from our monitoring stations — treat it as directional only."
 - 🤖 **Grounded Q&A, not RAG-flavored guessing** — "why is this constituency's AQI rising?" is answered using the model's *actual* feature importances (lags, rolling means, weather, calendar). The agent NEVER references satellite/fire data because they weren't in the trained model.
 - 🎨 **Official CPCB AQI color scale** — Good → Satisfactory → Moderate → Poor → Very Poor → Severe.
-- 🔒 **Zero live API calls during the actual demo** — fully cached pipeline, so nothing can fail live on stage.
+- 🔒 **Fully cached data pipeline** — all data ingestion is cached, never live during the demo. Groq advisory/Q&A calls are intentionally live for the interactive moment, with a pre-generated fallback as insurance.
 - 💸 **Zero-cost, end-to-end** — every tool and data source used has a genuine free tier.
 
 ---
@@ -112,7 +112,8 @@ The novelty claim isn't "we forecast AQI" — plenty of teams will show that. It
 ```mermaid
 flowchart TD
     subgraph ING["Data Ingestion — cached, NEVER called live during demo"]
-        A1["OpenAQ — 3 active CPCB stations"]
+        A1["OpenAQ — 3 CPCB stations
+        (RK Puram · Anand Vihar · Punjabi Bagh)"]
         A2["Open-Meteo Weather"]
     end
     A1 --> FS
@@ -120,26 +121,38 @@ flowchart TD
     FS[("Feature Store — SQLite
     81 features: lags, rolling means, calendar,
     weather — NO satellite features")]
-    FS --> MODEL["Forecasting Model
-    LightGBM x3 (24h / 48h / 72h)
-    benchmarked vs persistence + seasonal-naive
-    RMSE: 33.5 / 35.5 / 35.9"]
-    MODEL --> IDW["IDW Spatial Interpolation
-    3 station points → 70 AC centroids
-    + distance-based confidence overlay"]
+    FS --> MODEL["LightGBM × 3 horizons
+    (24h / 48h / 72h)
+    RMSE: 33.5 / 35.5 / 35.9
+    Beats persistence at all horizons"]
+    MODEL --> IDW["IDW Interpolation
+    3 points → 70 AC centroids
+    + Distance-based confidence tiering
+    High (<5km): 19 ACs
+    Medium (5–15km): 46 ACs
+    Low (>15km): 5 ACs"]
     IDW --> AGENT["Advisory & Q&A Agent
-    Groq · Llama 3.1 8B
-    Grounded in real feature importances only
-    NEVER references satellite/fire"]
-    IDW --> API["Geospatial API Layer
-    FastAPI → GeoJSON per AC/horizon
-    + confidence tier per unit"]
-    AGENT --> FE["Frontend Dashboard
-    Leaflet.js + CPCB color scale
-    + time slider + confidence overlay
-    + advisory panel + Q&A"]
+    Groq · Llama 3.1 8B Instant
+    EN + Hindi · Feature-importance grounded
+    Strictly constrained: no satellite/fire refs
+    Low-confidence: mandatory honesty caveat
+    Pre-cached fallback responses for demo"]
+    IDW --> API["FastAPI — 4 endpoints
+    /forecast/{horizon} (GeoJSON)
+    /forecast/{unit_id}/{horizon}
+    /advisory/{unit_id}/{horizon}
+    /qa/{unit_id}"]
+    AGENT --> FE["Leaflet Frontend
+    CPCB official color scale
+    + Confidence-tier border encoding
+    + Time slider (24h/48h/72h)
+    + Advisory panel + Q&A box
+    Dark CartoDB basemap"]
     API --> FE
-    FE --> DEPLOY["Deployed on HuggingFace Spaces"]
+    FE --> DEPLOY["HuggingFace Spaces
+    Docker · Single container
+    Backend + Static frontend
+    Port 7860 · Secrets: GROQ_API_KEY"]
 ```
 
 **Where AI is used vs. classical processing (say this explicitly in the pitch):** the numeric forecast is a **classical gradient-boosting regression model**, not an LLM — that's the right tool for numerical prediction. The LLM's job is narrow and honest: translate real model output into plain language, and answer questions using that model's real feature importances. This division of labour is a selling point, not a limitation.
@@ -180,7 +193,7 @@ The trained model uses **only** ground-station sensor readings, weather measurem
 
 ## 🔄 Project Workflow & Architecture Explanation
 
-Raw sources → cached feature store (refreshed on a schedule, never live during judging) → LightGBM produces per-station forecasts for 3 horizons → IDW interpolation turns discrete station points into a continuous ward-level surface → forecast output feeds two parallel consumers: the LLM advisory/Q&A layer and the GeoJSON API → frontend renders both.
+Raw sources → cached feature store (refreshed on a schedule, never live during judging) → LightGBM produces per-station forecasts for 3 horizons → IDW interpolation turns discrete station points into a continuous constituency-level surface → forecast output feeds two parallel consumers: the LLM advisory/Q&A layer and the GeoJSON API → frontend renders both.
 
 ---
 
@@ -245,7 +258,7 @@ vayudrishti/
 
 **LLM Workflow** — The Advisory Agent takes `{constituency, forecast AQI, AQI category, confidence tier, top real feature importances}` and produces a 2–3 sentence advisory in English + Hindi via Groq. Low-confidence units trigger an explicit honesty caveat: "This estimate is far from our monitoring stations — treat it as directional only." The Q&A Agent answers follow-up questions using the model's *actual* top features — strictly constrained to never reference satellite/fire data.
 
-**User Workflow** — User opens the dashboard → sees a color-coded ward map → moves the time slider (today → 24h → 48h → 72h) → clicks a ward → reads the localized advisory → optionally types a follow-up question and gets a grounded answer.
+**User Workflow** — User opens the dashboard → sees a color-coded constituency map → moves the time slider (today → 24h → 48h → 72h) → clicks a constituency → reads the localized advisory → optionally types a follow-up question and gets a grounded answer.
 
 ---
 
@@ -253,9 +266,9 @@ vayudrishti/
 
 *(placeholders — replace before submission)*
 
-| Dashboard Home | Ward Drill-in + Advisory | Q&A Interaction | RMSE Benchmark Chart |
+| Dashboard Home | Constituency Drill-in + Advisory | Q&A Interaction | RMSE Benchmark Chart |
 |---|---|---|---|
-| `docs/screenshots/dashboard.png` | `docs/screenshots/ward-drilldown.png` | `docs/screenshots/qa-panel.png` | `docs/screenshots/rmse-chart.png` |
+| `docs/screenshots/dashboard.png` | `docs/screenshots/constituency-drilldown.png` | `docs/screenshots/qa-panel.png` | `docs/screenshots/rmse-chart.png` |
 
 ---
 
@@ -272,7 +285,7 @@ vayudrishti/
 
 ## 💼 Business Impact
 
-India has already built and paid for 900+ government air-quality sensors. This is the missing layer that turns that existing infrastructure into 72-hour, ward-level, actionable warnings — instead of a number on a dashboard nobody consults — at zero additional data-collection cost.
+India has already built and paid for 900+ government air-quality sensors. This is the missing layer that turns that existing infrastructure into 72-hour, constituency-level, actionable warnings — instead of a number on a dashboard nobody consults — at zero additional data-collection cost.
 
 ---
 
@@ -302,7 +315,7 @@ India has already built and paid for 900+ government air-quality sensors. This i
 - **No satellite or fire features in the model** — GEE IAM is still pending. The Advisory/Q&A agent is explicitly constrained to never reference these data sources. If asked, it states plainly they're not part of this model.
 - **Advisory and Q&A are grounded in feature importances, not full causal attribution** — explicitly labelled as directional, never claimed as causal.
 - **No live enforcement recommendations, no real WhatsApp/IVR delivery** — advisory is via in-dashboard panel only.
-- **No live network calls during the demo** — everything runs off cached data by design.
+- **Data pipeline is fully cached** — all AQ/weather data ingestion runs offline. The Groq advisory/Q&A agent is the only live network call during the demo, with a pre-generated fallback loaded as insurance.
 
 ---
 
@@ -493,16 +506,16 @@ WAQI (aqicn.org) · CPCB & data.gov.in · OpenWeatherMap · Google Earth Engine 
 
 **Expected Output:** A live public URL showing the Leaflet map dashboard wired to the backend, plus the architecture diagram, presentation deck, and demo video.
 
-**Main Modules:** Leaflet.js frontend (CPCB color scale, time slider, ward drill-in, advisory panel, Q&A box) · frontend–backend wiring · HuggingFace Spaces deployment (Docker SDK) · demo script rehearsal · deliverable assembly.
+**Main Modules:** Leaflet.js frontend (CPCB color scale, time slider, constituency drill-in, advisory panel, Q&A box) · frontend–backend wiring · HuggingFace Spaces deployment (Docker SDK) · demo script rehearsal · deliverable assembly.
 
 **Checklist:**
 - [ ] Leaflet map built with the official CPCB AQI color scale
 - [ ] Time slider (today / 24h / 48h / 72h) wired
-- [ ] Ward click → advisory panel populated
+- [ ] Constituency click → advisory panel populated
 - [ ] Q&A input box wired to backend
 - [ ] Frontend deployed and connected to backend on HuggingFace Spaces
 - [ ] No raw JSON visible anywhere in the demo path
-- [ ] No live network calls in the demo path (fully cached)
+- [ ] Data pipeline fully cached; Groq live calls protected by pre-generated fallback
 - [ ] Architecture diagram produced
 - [ ] Presentation deck produced (skeleton started Day 3, not Day 5)
 - [ ] Demo video recorded
@@ -524,20 +537,21 @@ WAQI (aqicn.org) · CPCB & data.gov.in · OpenWeatherMap · Google Earth Engine 
 
 ```mermaid
 flowchart LR
-    A[Data Ingestion Clients] --> B[("Feature Store — SQLite")]
-    B --> C[Feature Engineering]
-    C --> D[Baseline Models]
-    C --> E[LightGBM Forecasting Models]
-    D --> F[RMSE Benchmark Report]
-    E --> F
-    E --> G[IDW Spatial Interpolation]
-    G --> H[Ward Boundary Integration]
-    H --> I[FastAPI Geospatial API]
-    H --> J[Advisory & Q&A Agent — Groq]
-    I --> K[Leaflet Frontend Dashboard]
-    J --> K
-    K --> L[HuggingFace Spaces Deployment]
-    L --> M[Demo Script & Deliverables]
+    A[Data Ingestion — OpenAQ + Weather] --> B[("Feature Store — SQLite
+    81 features, no satellite")]
+    B --> C[LightGBM Models ×3 horizons]
+    C --> D[RMSE Benchmark vs Baselines]
+    C --> E[IDW Spatial Interpolation]
+    E --> F[Constituency Boundary Integration — 70 ACs]
+    E --> G["Confidence Tiering
+    High/Medium/Low per AC"]
+    F --> H[FastAPI Geospatial API — 4 endpoints]
+    G --> H
+    H --> I[Advisory & Q&A Agent — Groq · EN+Hindi]
+    H --> J[Leaflet Frontend Dashboard]
+    I --> J
+    J --> K[HuggingFace Spaces Deployment]
+    K --> L[Demo Script & Deliverables]
 ```
 
 ## 🗺️ Milestone Checklist

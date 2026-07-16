@@ -249,32 +249,51 @@ def train_all_models(
 # ───────────────────────── D2-T6: forecast() interface ─────────────────────────
 
 
+def _load_latest_features(canonical_name: str) -> pd.DataFrame | None:
+    snapshot_path = MODEL_DIR / "latest_features.json"
+    if snapshot_path.exists():
+        with open(snapshot_path) as f:
+            snapshot = json.load(f)
+        if canonical_name in snapshot:
+            return pd.DataFrame([snapshot[canonical_name]])
+    return None
+
+
+def _load_features_csv(station: str, suffix: str) -> pd.DataFrame | None:
+    features_path = f"data/processed/features_{suffix}.csv"
+    if not Path(features_path).exists():
+        features_path = "data/processed/features.csv"
+    if not Path(features_path).exists():
+        return None
+    df = pd.read_csv(features_path, parse_dates=["timestamp"])
+    station_data = df[df["canonical_name"] == station].copy()
+    if station_data.empty:
+        return None
+    return station_data.sort_values("timestamp").tail(1)
+
+
 def forecast(canonical_name: str, horizon: int, suffix: str = "openaq") -> dict | None:
     MOD_DIR = MODEL_DIR
 
     model_path = MOD_DIR / f"forecast_{horizon}h_{suffix}.pkl"
     feat_path = MOD_DIR / f"feature_cols_{horizon}h_{suffix}.json"
 
-    # Fallback: try without suffix if not found
     if not model_path.exists():
         model_path = MOD_DIR / f"forecast_{horizon}h.pkl"
     if not feat_path.exists():
         feat_path = MOD_DIR / f"feature_cols_{horizon}h.json"
-    features_path = f"data/processed/features_{suffix}.csv"
-    if not Path(features_path).exists():
-        features_path = "data/processed/features.csv"
 
     if not model_path.exists() or not feat_path.exists():
         print(f"Model for {horizon}h not found at {model_path}")
         return None
 
-    df = pd.read_csv(features_path, parse_dates=["timestamp"])
-    station_data = df[df["canonical_name"] == canonical_name].copy()
-    if station_data.empty:
+    latest = _load_latest_features(canonical_name)
+    if latest is None:
+        latest = _load_features_csv(canonical_name, suffix)
+
+    if latest is None or latest.empty:
         print(f"No data for station '{canonical_name}'")
         return None
-
-    station_data = station_data.sort_values("timestamp")
 
     with open(feat_path) as f:
         feature_cols = json.load(f)
@@ -282,19 +301,24 @@ def forecast(canonical_name: str, horizon: int, suffix: str = "openaq") -> dict 
     with open(model_path, "rb") as f:
         model = pickle.load(f)
 
-    latest = station_data.tail(1)
+    missing = [c for c in feature_cols if c not in latest.columns]
+    if missing:
+        print(f"Missing feature columns: {missing[:5]}...")
+        return None
+
     X = latest[feature_cols]
     aqi = float(model.predict(X)[0])
+
+    ts_val = str(latest["timestamp"].values[0]) if "timestamp" in latest.columns else "unknown"
 
     result = {
         "station": canonical_name,
         "horizon_hours": horizon,
         "forecast_aqi": round(aqi, 1),
         "pm25": round(aqi, 1),
-        "timestamp": str(latest["timestamp"].values[0]),
+        "timestamp": ts_val,
     }
 
-    # Compute AQI category based on CPCB scale
     if aqi <= 50:
         result["category"] = "Good"
     elif aqi <= 100:

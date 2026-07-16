@@ -1,13 +1,15 @@
 """
-VayuDrishti Phase 2 — FastAPI Backend
-Forecast + Advisory + Q&A endpoints
+VayuDrishti Phase 3 — FastAPI Backend
+Forecast + Advisory + Q&A endpoints + Static Frontend
 """
 import json
 import sys
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -20,8 +22,24 @@ from agents.advisory import generate_advisory, answer_question, verify_no_satell
 app = FastAPI(
     title="VayuDrishti API",
     description="Delhi AQI Forecast — 3-station IDW interpolation with confidence tiering",
-    version="0.2.0",
+    version="0.3.0",
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+frontend_dir = PROJECT_ROOT / "frontend"
+if frontend_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(frontend_dir)), name="static")
+
+    @app.get("/")
+    def root():
+        return RedirectResponse(url="/static/index.html")
 
 VALID_HORIZONS = {24, 48, 72}
 
@@ -175,4 +193,4 @@ def _aqi_category(aqi: float) -> str:
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "VayuDrishti API", "version": "0.2.0"}
+    return {"status": "ok", "service": "VayuDrishti API", "version": "0.3.0"}

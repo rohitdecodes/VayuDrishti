@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VayuDrishti — Delhi AQI Forecast</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; color: #eee; height: 100vh; overflow: hidden; }
+#map { width: 100%; height: 100%; z-index: 0; }
+#header { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); padding: 8px 20px; display: flex; align-items: center; gap: 16px; box-shadow: 0 2px 20px rgba(0,0,0,0.5); }
+#header h1 { font-size: 22px; font-weight: 700; color: #fff; letter-spacing: 0.5px; }
+#header h1 span { color: #64b5f6; }
+#time-slider { display: flex; gap: 4px; margin-left: 24px; }
+#time-slider button { padding: 6px 16px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.08); color: #ccc; border-radius: 6px; cursor: pointer; font-size: 13px; transition: all 0.2s; font-family: inherit; }
+#time-slider button:hover { background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.4); }
+#time-slider button.active { background: #64b5f6; color: #1a1a2e; border-color: #64b5f6; font-weight: 600; }
+#aqi-range-tag { font-size: 12px; color: #aaa; margin-left: auto; padding: 4px 10px; background: rgba(255,255,255,0.06); border-radius: 4px; }
+#panel { position: fixed; right: 20px; top: 80px; bottom: 20px; width: 380px; background: rgba(15,12,41,0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; z-index: 1000; display: flex; flex-direction: column; box-shadow: 0 8px 40px rgba(0,0,0,0.5); backdrop-filter: blur(12px); transition: opacity 0.3s; }
+#panel.hidden { opacity: 0; pointer-events: none; }
+#panel-content { padding: 16px; flex: 1; overflow-y: auto; }
+#panel-empty { text-align: center; padding: 40px 20px; color: #888; font-size: 14px; }
+#panel-empty svg { width: 48px; height: 48px; margin-bottom: 12px; opacity: 0.4; }
+.unit-name { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+.aqi-value { font-size: 42px; font-weight: 800; margin: 4px 0; display: flex; align-items: center; gap: 12px; }
+.aqi-category { font-size: 13px; padding: 3px 8px; border-radius: 4px; font-weight: 600; }
+.confidence-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 13px; margin: 8px 0; width: fit-content; }
+.confidence-badge.high { background: rgba(46,125,50,0.2); color: #81c784; border: 1px solid rgba(46,125,50,0.4); }
+.confidence-badge.medium { background: rgba(249,168,37,0.2); color: #ffb74d; border: 1px solid rgba(249,168,37,0.4); }
+.confidence-badge.low { background: rgba(198,40,40,0.2); color: #ef5350; border: 1px solid rgba(198,40,40,0.5); }
+.confidence-badge .icon { font-size: 16px; }
+.advisory-section { margin-top: 14px; }
+.advisory-section h4 { font-size: 13px; color: #999; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+.advisory-text { font-size: 14px; line-height: 1.6; color: #ddd; padding: 12px; background: rgba(255,255,255,0.04); border-radius: 8px; margin-bottom: 10px; border-left: 3px solid #64b5f6; }
+.advisory-text.hi { border-left-color: #ef6c00; }
+.qa-section { margin-top: 18px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px; }
+.qa-section h4 { font-size: 13px; color: #999; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+.question-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.chip { padding: 6px 12px; background: rgba(100,181,246,0.1); border: 1px solid rgba(100,181,246,0.3); color: #64b5f6; border-radius: 20px; cursor: pointer; font-size: 12px; transition: all 0.2s; font-family: inherit; }
+.chip:hover { background: rgba(100,181,246,0.2); border-color: rgba(100,181,246,0.6); }
+.qa-input-row { display: flex; gap: 8px; }
+.qa-input-row input { flex: 1; padding: 8px 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.15); color: #eee; border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; }
+.qa-input-row input:focus { border-color: #64b5f6; }
+.qa-input-row button { padding: 8px 14px; background: #64b5f6; color: #1a1a2e; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; font-family: inherit; }
+.qa-input-row button:hover { background: #42a5f5; }
+.qa-answer { margin-top: 10px; font-size: 14px; line-height: 1.6; color: #ddd; padding: 12px; background: rgba(255,255,255,0.04); border-radius: 8px; }
+.loading { display: flex; align-items: center; gap: 8px; color: #999; font-size: 13px; padding: 8px 0; }
+.loading::after { content: ''; width: 14px; height: 14px; border: 2px solid #64b5f6; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.error-message { color: #ef5350; font-size: 13px; padding: 8px; background: rgba(198,40,40,0.1); border-radius: 6px; }
+#legend { position: fixed; bottom: 24px; left: 24px; z-index: 1000; background: rgba(15,12,41,0.92); padding: 14px 18px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); font-size: 12px; backdrop-filter: blur(8px); }
+#legend h4 { color: #fff; margin-bottom: 8px; font-size: 13px; }
+.legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.legend-color { width: 16px; height: 16px; border-radius: 3px; flex-shrink: 0; }
+.legend-confidence { width: 18px; height: 3px; flex-shrink: 0; border-radius: 2px; }
+.legend-confidence.high { background: #2E7D32; }
+.legend-confidence.medium { background: linear-gradient(90deg, #F9A825 50%, transparent 50%); background-size: 8px 100%; }
+.legend-confidence.low { background: #C62828; height: 4px; }
+.legend-divider { margin: 8px 0 6px; border-top: 1px solid rgba(255,255,255,0.08); }
+.info-tag { color: #aaa; font-size: 11px; margin-top: 6px; }
+#cache-indicator { font-size: 10px; color: #666; padding: 2px 6px; background: rgba(255,255,255,0.05); border-radius: 4px; font-style: italic; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <h1>Vayu<span>Drishti</span></h1>
+  <div id="time-slider">
+    <button data-horizon="today" class="active">Today</button>
+    <button data-horizon="24">+24h</button>
+    <button data-horizon="48">+48h</button>
+    <button data-horizon="72">+72h</button>
+  </div>
+  <span id="aqi-range-tag"></span>
+</div>
+
+<div id="map"></div>
+
+<div id="panel" class="hidden">
+  <div id="panel-content">
+    <div id="panel-dynamic"></div>
+  </div>
+</div>
+
+<div id="legend">
+  <h4>AQI Scale (CPCB)</h4>
+  <div class="legend-row"><div class="legend-color" style="background:#00AB00"></div> Good (0–50)</div>
+  <div class="legend-row"><div class="legend-color" style="background:#00E400"></div> Satisfactory (51–100)</div>
+  <div class="legend-row"><div class="legend-color" style="background:#FFFF00"></div> Moderate (101–200)</div>
+  <div class="legend-row"><div class="legend-color" style="background:#FF7E00"></div> Poor (201–300)</div>
+  <div class="legend-row"><div class="legend-color" style="background:#FF0000"></div> Very Poor (301–400)</div>
+  <div class="legend-row"><div class="legend-color" style="background:#AF2D2D"></div> Severe (401+)</div>
+  <div class="legend-divider"></div>
+  <h4>Confidence Tier</h4>
+  <div class="legend-row"><div class="legend-confidence high"></div> High (<5km)</div>
+  <div class="legend-row"><div class="legend-confidence medium"></div> Medium (5–15km)</div>
+  <div class="legend-row"><div class="legend-confidence low"></div> Low (>15km)</div>
+  <div class="info-tag" id="aqi-range-legend"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ─────────────────── CONFIG ───────────────────
+const API_BASE = window.location.origin;
+const CPCB_COLORS = {
+  Good: '#00AB00', Satisfactory: '#00E400', Moderate: '#FFFF00',
+  Poor: '#FF7E00', 'Very Poor': '#FF0000', Severe: '#AF2D2D'
+};
+const CONFIDENCE_STYLES = {
+  high: { color: '#2E7D32', weight: 2, dashArray: null },
+  medium: { color: '#F9A825', weight: 2, dashArray: '8,4' },
+  low: { color: '#C62828', weight: 3.5, dashArray: null }
+};
+const DEFAULT_HORIZON = 24;
+const QUESTION_CHIPS = [
+  'Why is this AQI changing?',
+  'How reliable is this estimate?',
+  'What should I do if AQI is high?'
+];
+
+// ─────────────────── STATE ───────────────────
+let currentHorizon = DEFAULT_HORIZON;
+let currentGeoJSON = null;
+let geoLayer = null;
+let lowConfidenceLayer = null;
+let selectedUnitId = null;
+let highlightedLayer = null;
+
+// ─────────────────── MAP INIT ───────────────────
+const map = L.map('map', {
+  center: [28.65, 77.15],
+  zoom: 10,
+  minZoom: 9,
+  maxZoom: 13,
+  zoomControl: true
+});
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> | VayuDrishti',
+  maxZoom: 19
+}).addTo(map);
+
+// ─────────────────── CPCB AQI HELPER ───────────────────
+function getAQICategory(aqi) {
+  if (aqi <= 50) return 'Good';
+  if (aqi <= 100) return 'Satisfactory';
+  if (aqi <= 200) return 'Moderate';
+  if (aqi <= 300) return 'Poor';
+  if (aqi <= 400) return 'Very Poor';
+  return 'Severe';
+}
+
+// ─────────────────── FETCH FORECAST ───────────────────
+async function fetchForecast(horizon) {
+  const resp = await fetch(`${API_BASE}/forecast/${horizon}`);
+  if (!resp.ok) throw new Error(`Forecast fetch failed: ${resp.status}`);
+  return await resp.json();
+}
+
+// ─────────────────── RENDER MAP ───────────────────
+function renderGeoJSON(geojson) {
+  if (geoLayer) map.removeLayer(geoLayer);
+  if (lowConfidenceLayer) map.removeLayer(lowConfidenceLayer);
+
+  const allFeatures = geojson.features || [];
+  if (!allFeatures.length) return;
+
+  const aqiValues = allFeatures.map(f => f.properties.forecast_aqi);
+  const minAqi = Math.round(Math.min(...aqiValues));
+  const maxAqi = Math.round(Math.max(...aqiValues));
+  const dominantCategory = getAQICategory((minAqi + maxAqi) / 2);
+
+  document.getElementById('aqi-range-tag').textContent = `Delhi AQI range: ${minAqi}–${maxAqi} (${dominantCategory})`;
+  document.getElementById('aqi-range-legend').textContent = `Current range: ${minAqi}–${maxAqi}, ${dominantCategory}`;
+
+  geoLayer = L.geoJSON(allFeatures, {
+    style: featureStyle,
+    onEachFeature: onEachFeature
+  }).addTo(map);
+
+  const lowConfFeatures = allFeatures.filter(f => f.properties.confidence_tier === 'low');
+  if (lowConfFeatures.length > 0) {
+    lowConfidenceLayer = L.geoJSON(lowConfFeatures, {
+      style: function() {
+        return { fill: false, color: 'transparent', weight: 0, interactive: false };
+      },
+      onEachFeature: function(feature, layer) {
+        layer.on('add', function() {
+          if (layer._path) {
+            layer._path.style.pointerEvents = 'none';
+          }
+        });
+      }
+    });
+    lowConfidenceLayer.addTo(map);
+    if (lowConfidenceLayer._layers) {
+      Object.values(lowConfidenceLayer._layers).forEach(function(l) {
+        if (l._path) {
+          l._path.setAttribute('fill', 'url(#hatch-pattern)');
+        }
+      });
+    }
+  } else {
+    lowConfidenceLayer = null;
+  }
+
+  currentGeoJSON = geojson;
+  fitMapBounds();
+}
+
+function featureStyle(feature) {
+  const props = feature.properties;
+  const aqi = props.forecast_aqi;
+  const category = getAQICategory(aqi);
+  const fillColor = CPCB_COLORS[category] || '#888888';
+  const tier = props.confidence_tier || 'medium';
+  const confStyle = CONFIDENCE_STYLES[tier] || CONFIDENCE_STYLES.medium;
+
+  return {
+    fillColor: fillColor,
+    fillOpacity: 0.65,
+    color: confStyle.color,
+    weight: confStyle.weight,
+    dashArray: confStyle.dashArray,
+    opacity: 0.9
+  };
+}
+
+function onEachFeature(feature, layer) {
+  const props = feature.properties;
+  const tooltipContent = `<b>${props.unit_name}</b><br>AQI: ${props.forecast_aqi} (${getAQICategory(props.forecast_aqi)})<br>Confidence: ${props.confidence_label} &mdash; ${props.confidence_description}`;
+  layer.bindTooltip(tooltipContent, { sticky: true, direction: 'top', offset: [0, -5] });
+
+  layer.on({
+    click: function(e) {
+      handleUnitClick(props, layer);
+    },
+    mouseover: function(e) {
+      layer.openTooltip();
+    },
+    mouseout: function(e) {
+      layer.closeTooltip();
+    }
+  });
+}
+
+function fitMapBounds() {
+  try {
+    const bounds = geoLayer.getBounds();
+    if (bounds.isValid()) map.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+  } catch(e) {}
+}
+
+// ─────────────────── UNIT CLICK ───────────────────
+function handleUnitClick(props, layer) {
+  selectedUnitId = props.unit_id;
+  document.getElementById('panel').classList.remove('hidden');
+
+  if (highlightedLayer) {
+    geoLayer.resetStyle(highlightedLayer);
+  }
+  highlightedLayer = layer;
+  layer.setStyle({ weight: 4, color: '#ffffff', dashArray: null });
+
+  renderAdvisoryPanel(props);
+  fetchAndRenderAdvisory(props.unit_id);
+}
+
+async function fetchAndRenderAdvisory(unitId) {
+  const advisoryContainer = document.getElementById('advisory-content');
+  advisoryContainer.innerHTML = '<div class="loading">Generating advisory...</div>';
+
+  try {
+    const resp = await fetch(`${API_BASE}/advisory/${unitId}/${currentHorizon}`, { method: 'POST' });
+    if (!resp.ok) throw new Error('Advisory fetch failed');
+    const data = await resp.json();
+    advisoryContainer.innerHTML = `
+      <div class="advisory-section">
+        <h4>English Advisory</h4>
+        <div class="advisory-text">${escapeHtml(data.advisory_en || 'Advisory not available.')}</div>
+      </div>
+      <div class="advisory-section">
+        <h4>हिंदी सलाह (Hindi Advisory)</h4>
+        <div class="advisory-text hi">${escapeHtml(data.advisory_hi || '')}</div>
+      </div>
+    `;
+    setupQASection(unitId);
+  } catch(err) {
+    const fb = getFallback('advisory', unitId);
+    if (fb) {
+      advisoryContainer.innerHTML = `
+        <div class="advisory-section">
+          <h4>English Advisory <span id="cache-indicator">(cached)</span></h4>
+          <div class="advisory-text">${escapeHtml(fb.advisory_en)}</div>
+        </div>
+        <div class="advisory-section">
+          <h4>हिंदी सलाह (Hindi Advisory) <span id="cache-indicator">(cached)</span></h4>
+          <div class="advisory-text hi">${escapeHtml(fb.advisory_hi)}</div>
+        </div>
+      `;
+    } else {
+      advisoryContainer.innerHTML = `<div class="error-message">Unable to generate advisory. Please try again.</div>`;
+    }
+    setupQASection(unitId);
+  }
+}
+
+function renderAdvisoryPanel(props) {
+  const aqi = props.forecast_aqi;
+  const category = getAQICategory(aqi);
+  const tier = props.confidence_tier || 'medium';
+  const tierLabel = props.confidence_label || 'Medium';
+  const tierDesc = props.confidence_description || '';
+  const tierIcons = { high: '✓', medium: '○', low: '⚠' };
+
+  document.getElementById('panel-dynamic').innerHTML = `
+    <div class="unit-name">${props.unit_name}</div>
+    <div class="aqi-value">
+      ${aqi}
+      <span class="aqi-category" style="background:${CPCB_COLORS[category]};color:${category === 'Moderate' || category === 'Satisfactory' ? '#1a1a2e' : '#fff'}">${category}</span>
+    </div>
+    <div class="confidence-badge ${tier}">
+      <span class="icon">${tierIcons[tier] || '○'}</span>
+      ${tierLabel} Confidence — ${tierDesc}
+    </div>
+    <div id="advisory-content"></div>
+  `;
+}
+
+// ─────────────────── Q&A ───────────────────
+function setupQASection(unitId) {
+  const panelDynamic = document.getElementById('panel-dynamic');
+  panelDynamic.insertAdjacentHTML('beforeend', `
+    <div class="qa-section">
+      <h4>Ask a Question</h4>
+      <div class="question-chips">
+        ${QUESTION_CHIPS.map(q => `<button class="chip" onclick="askQuestion('${unitId}','${escapeHtml(q)}')">${escapeHtml(q)}</button>`).join('')}
+      </div>
+      <div class="qa-input-row">
+        <input type="text" id="qa-input" placeholder="Type your question..." onkeydown="if(event.key==='Enter')askQuestion('${unitId}',document.getElementById('qa-input').value)">
+        <button onclick="askQuestion('${unitId}', document.getElementById('qa-input').value)">Ask</button>
+      </div>
+      <div id="qa-answer"></div>
+    </div>
+  `);
+}
+
+async function askQuestion(unitId, question) {
+  if (!question || !question.trim()) return;
+  const answerDiv = document.getElementById('qa-answer');
+  answerDiv.innerHTML = '<div class="loading">Thinking...</div>';
+  document.getElementById('qa-input').value = '';
+
+  try {
+    const resp = await fetch(`${API_BASE}/qa/${unitId}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: question.trim() })
+    });
+    if (!resp.ok) throw new Error('Q&A fetch failed');
+    const data = await resp.json();
+    answerDiv.innerHTML = `<div class="qa-answer">${escapeHtml(data.answer || 'No answer available.')}</div>`;
+  } catch(err) {
+    const fb = getFallback('qa', unitId);
+    if (fb) {
+      answerDiv.innerHTML = `<div class="qa-answer"><span id="cache-indicator">(cached)</span> ${escapeHtml(fb.answer)}</div>`;
+    } else {
+      answerDiv.innerHTML = `<div class="error-message">Unable to answer. Our model only answers based on ground-station data. Please try a different question.</div>`;
+    }
+  }
+}
+
+// ─────────────────── FALLBACK ───────────────────
+let fallbacks = {};
+async function loadFallbacks() {
+  try {
+    const resp = await fetch(`${API_BASE}/static/fallbacks.json`);
+    if (resp.ok) fallbacks = await resp.json();
+  } catch(e) { fallbacks = {}; }
+}
+
+function getFallback(type, unitId) {
+  if (!fallbacks[type]) return null;
+  for (const key in fallbacks[type]) {
+    if (key === unitId || fallbacks[type][key].unit_id === unitId || key === 'default') {
+      return fallbacks[type][key];
+    }
+  }
+  return fallbacks[type] ? (fallbacks[type].default || Object.values(fallbacks[type])[0]) : null;
+}
+
+// ─────────────────── TIME SLIDER ───────────────────
+document.getElementById('time-slider').addEventListener('click', function(e) {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  const horizon = btn.dataset.horizon;
+  const horizonVal = horizon === 'today' ? 24 : parseInt(horizon);
+  if (horizonVal === currentHorizon && currentGeoJSON) return;
+
+  document.querySelectorAll('#time-slider button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  loadHorizon(horizonVal);
+});
+
+async function loadHorizon(horizon) {
+  currentHorizon = horizon;
+  document.getElementById('aqi-range-tag').textContent = 'Loading...';
+  try {
+    const geojson = await fetchForecast(horizon);
+    renderGeoJSON(geojson);
+    if (selectedUnitId) {
+      const feat = geojson.features.find(f => f.properties.unit_id === selectedUnitId);
+      if (feat) fetchAndRenderAdvisory(selectedUnitId);
+    }
+  } catch(err) {
+    document.getElementById('aqi-range-tag').textContent = 'Error loading data';
+    console.error('Horizon load error:', err);
+  }
+}
+
+// ─────────────────── UTILS ───────────────────
+function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ─────────────────── INIT ───────────────────
+loadFallbacks();
+loadHorizon(DEFAULT_HORIZON);
+
+// ─────────────────── HATCH PATTERN FOR LOW CONFIDENCE ───────────────────
+(function addHatchPattern() {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', '0');
+  svg.setAttribute('height', '0');
+  svg.style.position = 'absolute';
+
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  const pattern = document.createElementNS('http://www.w3.org/2000/svg', 'pattern');
+  pattern.setAttribute('id', 'hatch-pattern');
+  pattern.setAttribute('patternUnits', 'userSpaceOnUse');
+  pattern.setAttribute('width', '10');
+  pattern.setAttribute('height', '10');
+  pattern.setAttribute('patternTransform', 'rotate(45)');
+
+  const line1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line1.setAttribute('x1', '0'); line1.setAttribute('y1', '0');
+  line1.setAttribute('x2', '0'); line1.setAttribute('y2', '10');
+  line1.setAttribute('stroke', '#C62828');
+  line1.setAttribute('stroke-width', '1.5');
+  line1.setAttribute('stroke-opacity', '0.5');
+
+  const line2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line2.setAttribute('x1', '5'); line2.setAttribute('y1', '0');
+  line2.setAttribute('x2', '5'); line2.setAttribute('y2', '10');
+  line2.setAttribute('stroke', '#C62828');
+  line2.setAttribute('stroke-width', '0.7');
+  line2.setAttribute('stroke-opacity', '0.3');
+
+  pattern.appendChild(line1);
+  pattern.appendChild(line2);
+  defs.appendChild(pattern);
+  svg.appendChild(defs);
+  document.body.appendChild(svg);
+})();
+</script>
+</body>
+</html>
