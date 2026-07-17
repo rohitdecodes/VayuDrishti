@@ -25,7 +25,7 @@ tags:
 
 **Constituency-level, 72-hour, explainable air quality forecasting for Delhi — built on real government ground-station data and weather measurements, at zero infrastructure cost.**
 
-[Live Demo](https://ogrohit-vayudrishti.hf.space) · [GitHub](https://github.com/rohitdecodes/VayuDrishti)
+[Live Demo](https://huggingface.co/spaces/OGrohit/VayuDrishti) · [GitHub](https://github.com/rohitdecodes/VayuDrishti)
 
 ![Hackathon](https://img.shields.io/badge/ET%20AI%20Hackathon-2026-blue)
 ![Problem Statement](https://img.shields.io/badge/Problem%20Statement-PS5-orange)
@@ -299,6 +299,7 @@ The architecture is designed to scale: swapping to a new city is a matter of pro
 ## 👤 Contributors
 
 **Rohit Patil** 
+
 ---
 
 ## 📄 License
