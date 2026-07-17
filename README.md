@@ -298,7 +298,7 @@ The architecture is designed to scale: swapping to a new city is a matter of pro
 
 ## 👤 Contributors
 
-**Rohit Patil** — Solo Builder 
+**Rohit Patil** 
 ---
 
 ## 📄 License
